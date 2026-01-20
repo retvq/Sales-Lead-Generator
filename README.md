@@ -53,23 +53,7 @@ An investor-grade, database-backed dashboard that replaces Excel-based fund trac
 ### Setup & Run
 
 ```bash
-# Navigate to backend directory
-cd backend
 
-# Create virtual environment (optional but recommended)
-python -m venv venv
-venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Linux/Mac
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Seed the database with demo data
-python seed.py
-
-# Start the server
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
 
 ### Access the Application
 
@@ -202,4 +186,5 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
 
