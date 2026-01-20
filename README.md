@@ -1,6 +1,16 @@
 # Capital Operations Dashboard
 
+[Demo](https://retvq.github.io/Sales-Lead-Generator/)
+
 An investor-grade, database-backed dashboard that replaces Excel-based fund tracking by providing cohort-level visibility into capital deployment, repayment velocity, and IRR performance.
+
+<img width="1317" height="643" alt="image" src="https://github.com/user-attachments/assets/b18d2edb-8db2-43b6-bfdf-7656c37ecfbb" />
+
+<img width="828" height="519" alt="image" src="https://github.com/user-attachments/assets/4a5ea371-aab7-4e67-baca-499f0dd8f278" />
+
+<img width="855" height="452" alt="image" src="https://github.com/user-attachments/assets/07e83489-7a31-4fb5-970f-93a641727f2e" />
+
+<img width="828" height="640" alt="image" src="https://github.com/user-attachments/assets/5299d5ae-c8f6-4da5-89ba-3ae361b11e2c" />
 
 ## Features
 
@@ -192,3 +202,4 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
