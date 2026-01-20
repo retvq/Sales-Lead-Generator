@@ -104,17 +104,6 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ### Option 2: Railway
 
-1. Push code to GitHub
-2. Go to [railway.app](https://railway.app) and create a new project
-3. Connect your GitHub repository
-4. Add a `Procfile` in the backend folder:
-   ```
-   web: uvicorn main:app --host 0.0.0.0 --port $PORT
-   ```
-5. Set build settings:
-   - **Root Directory**: `/backend`
-   - **Build Command**: `pip install -r requirements.txt && python seed.py`
-6. Deploy
 
 ### Option 3: Fly.io
 
@@ -202,6 +191,7 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
 
 
 
