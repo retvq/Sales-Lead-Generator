@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financing Dashboard | Capital Operations</title>
+    <meta name="description" content="Capital deployment, IRR performance, and investor cash flow tracking">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .health-healthy {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .health-at_risk {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .health-underperforming {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .flow-deployment {
+            color: #ef4444;
+        }
+
+        .flow-repayment {
+            color: #10b981;
+        }
+
+        .flow-capped {
+            color: #6b7280;
+        }
+
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="text-white antialiased">
+    <!-- Header -->
+    <header class="py-4 px-8 border-b border-white/5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-semibold">Capital Operations</h1>
+                    </div>
+                </a>
+            </div>
+            <nav class="flex items-center gap-6">
+                <a href="/financing"
+                    class="text-sm font-medium text-indigo-400 border-b-2 border-indigo-400 pb-1">Financing</a>
+                <a href="/unit-economics"
+                    class="text-sm font-medium text-gray-400 hover:text-white transition-colors">Unit Economics</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-8 py-8">
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold mb-2">Financing Dashboard</h2>
+            <p class="text-gray-400">Capital deployment, IRR performance, and cohort health tracking</p>
+        </div>
+
+        <!-- Top Metrics Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="metrics-container">
+            <div class="loading glass-card rounded-xl">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Capital Deployment Chart -->
+            <div class="glass-card rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-1">Capital Deployment</h3>
+                <p class="text-sm text-gray-400 mb-4">Monthly deployment trends</p>
+                <div class="h-64" id="deployment-chart-container">
+                    <canvas id="deploymentChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Cohort Health Matrix -->
+            <div class="glass-card rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-1">Cohort Health Matrix</h3>
+                <p class="text-sm text-gray-400 mb-4">Health status by cohort month</p>
+                <div id="cohort-health-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- IRR Section -->
+        <div class="glass-card rounded-xl p-6 mb-8">
+            <h3 class="text-lg font-semibold mb-1">Target Portfolio IRR</h3>
+            <p class="text-sm text-gray-400 mb-4">Target vs actual IRR performance by fund</p>
+            <div id="irr-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investor Cash Flow Matrix -->
+        <div class="glass-card rounded-xl p-6">
+            <h3 class="text-lg font-semibold mb-1">Investor Cash Flow & IRR Matrix</h3>
+            <p class="text-sm text-gray-400 mb-4">Monthly cashflows by cohort. <span class="flow-deployment">Red =
+                    Outflow</span> | <span class="flow-repayment">Green = Inflow</span> | <span class="flow-capped">Gray
+                    = Post-IRR Cap</span></p>
+            <div id="cashflow-matrix-container" class="overflow-x-auto">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-6 px-8 mt-8">
+        <div class="max-w-7xl mx-auto flex items-center justify-between text-sm text-gray-500">
+            <span>Capital Operations Dashboard v1.0</span>
+            <span>Data refreshed from SQLite database</span>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE = '';
+
+        function formatCurrency(val) {
+            if (val >= 1e6) return '$' + (val / 1e6).toFixed(1) + 'M';
+            if (val >= 1e3) return '$' + (val / 1e3).toFixed(0) + 'K';
+            return '$' + val.toFixed(0);
+        }
+
+        function formatPercent(val) {
+            return val.toFixed(1) + '%';
+        }
+
+        async function loadFundOverview() {
+            try {
+                const response = await fetch(`${API_BASE}/api/fund/overview`);
+                const data = await response.json();
+
+                const container = document.getElementById('metrics-container');
+                const summary = data.summary;
+
+                container.innerHTML = `
+                    <div class="metric-card rounded-xl p-6">
+                        <p class="text-sm text-gray-400 mb-1">Capital at Work</p>
+                        <p class="text-3xl font-bold text-emerald-400">${formatCurrency(summary.total_net_exposure)}</p>
+                        <p class="text-xs text-gray-500 mt-2">Net exposure across all funds</p>
+                    </div>
+                    <div class="metric-card rounded-xl p-6">
+                        <p class="text-sm text-gray-400 mb-1">Total Deployed</p>
+                        <p class="text-3xl font-bold text-indigo-400">${formatCurrency(summary.total_capital_deployed)}</p>
+                        <p class="text-xs text-gray-500 mt-2">Cumulative deployment</p>
+                    </div>
+                    <div class="metric-card rounded-xl p-6">
+                        <p class="text-sm text-gray-400 mb-1">Principal Repaid</p>
+                        <p class="text-3xl font-bold text-teal-400">${formatCurrency(summary.total_principal_repaid)}</p>
+                        <p class="text-xs text-gray-500 mt-2">Returned to investors</p>
+                    </div>
+                    <div class="metric-card rounded-xl p-6">
+                        <p class="text-sm text-gray-400 mb-1">Avg Current IRR</p>
+                        <p class="text-3xl font-bold ${summary.irr_variance > 2 ? 'text-amber-400' : 'text-emerald-400'}">${formatPercent(summary.average_current_irr)}</p>
+                        <p class="text-xs text-gray-500 mt-2">Target: ${formatPercent(summary.average_target_irr)}</p>
+                    </div>
+                `;
+
+                renderIRRComparison(data.funds);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderIRRComparison(funds) {
+            const container = document.getElementById('irr-container');
+
+            let html = '<div class="space-y-4">';
+
+            funds.forEach(fund => {
+                const achievement = fund.irr_achievement;
+                const barColor = achievement >= 90 ? 'bg-emerald-500' : achievement >= 75 ? 'bg-amber-500' : 'bg-red-500';
+
+                html += `
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 text-sm font-medium truncate">${fund.name}</div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs text-gray-400">Current: ${formatPercent(fund.current_irr)}</span>
+                                <span class="text-xs text-gray-500">|</span>
+                                <span class="text-xs text-gray-400">Target: ${formatPercent(fund.target_irr)}</span>
+                            </div>
+                            <div class="h-3 bg-gray-800 rounded-full overflow-hidden">
+                                <div class="h-full ${barColor} rounded-full transition-all" style="width: ${Math.min(achievement, 100)}%"></div>
+                            </div>
+                        </div>
+                        <div class="w-20 text-right">
+                            <span class="text-sm font-semibold ${achievement >= 90 ? 'text-emerald-400' : achievement >= 75 ? 'text-amber-400' : 'text-red-400'}">${achievement}%</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function loadCapitalDeployment() {
+            try {
+                const response = await fetch(`${API_BASE}/api/fund/capital-deployment`);
+                const data = await response.json();
+
+                const ctx = document.getElementById('deploymentChart').getContext('2d');
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.months,
+                        datasets: [
+                            {
+                                label: 'Monthly Deployment',
+                                data: data.deployments,
+                                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                                borderColor: 'rgba(102, 126, 234, 1)',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                order: 2
+                            },
+                            {
+                                label: 'Cumulative',
+                                data: data.cumulative,
+                                type: 'line',
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 4,
+                                pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                                order: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: '#9ca3af',
+                                    usePointStyle: true,
+                                    padding: 20
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: '#9ca3af' }
+                            },
+                            y: {
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: {
+                                    color: '#9ca3af',
+                                    callback: function (value) {
+                                        return formatCurrency(value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadCohortHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/api/fund/cohorts`);
+                const data = await response.json();
+
+                const container = document.getElementById('cohort-health-container');
+
+                let html = '';
+
+                data.data.forEach(fund => {
+                    html += `
+                        <div class="mb-6 last:mb-0">
+                            <p class="text-sm font-medium text-gray-300 mb-3">${fund.fund_name}</p>
+                            <div class="flex flex-wrap gap-2">
+                    `;
+
+                    fund.cohorts.forEach(cohort => {
+                        html += `
+                            <div class="health-${cohort.health_status} px-3 py-2 rounded-lg text-sm font-medium">
+                                ${cohort.cohort_month}
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                            <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Healthy: ${fund.health_summary.healthy}</span>
+                                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> At Risk: ${fund.health_summary.at_risk}</span>
+                                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Underperforming: ${fund.health_summary.underperforming}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadCashflowMatrix() {
+            try {
+                const response = await fetch(`${API_BASE}/api/fund/cashflows`);
+                const data = await response.json();
+
+                const container = document.getElementById('cashflow-matrix-container');
+
+                let html = '';
+
+                data.data.forEach(fund => {
+                    html += `
+                        <div class="mb-8 last:mb-0">
+                            <p class="text-sm font-semibold text-gray-300 mb-4">${fund.fund_name}</p>
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-white/10">
+                                        <th class="text-left py-2 px-3 text-gray-400 font-medium">Cohort</th>
+                                        <th class="text-left py-2 px-3 text-gray-400 font-medium">Status</th>
+                                        <th class="text-center py-2 px-2 text-gray-400 font-medium">M1</th>
+                                        <th class="text-center py-2 px-2 text-gray-400 font-medium">M2</th>
+                                        <th class="text-center py-2 px-2 text-gray-400 font-medium">M3</th>
+                                        <th class="text-center py-2 px-2 text-gray-400 font-medium">M4</th>
+                                        <th class="text-center py-2 px-2 text-gray-400 font-medium">M5</th>
+                                        <th class="text-center py-2 px-2 text-gray-400 font-medium">M6</th>
+                                        <th class="text-center py-2 px-2 text-gray-400 font-medium">M7</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    fund.cohorts.forEach(cohort => {
+                        html += `
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-3 px-3 font-medium">${cohort.cohort_month}</td>
+                                <td class="py-3 px-3">
+                                    <span class="health-${cohort.health_status} px-2 py-1 rounded text-xs font-medium">
+                                        ${cohort.health_status.replace('_', ' ')}
+                                    </span>
+                                </td>
+                        `;
+
+                        for (let month = 1; month <= 7; month++) {
+                            const cf = cohort.cashflows.find(c => c.month === month);
+                            if (cf) {
+                                const colorClass = cf.flow_type === 'deployment' ? 'flow-deployment' :
+                                    cf.flow_type === 'repayment' ? 'flow-repayment' : 'flow-capped';
+                                const displayValue = cf.amount < 0 ?
+                                    `(${formatCurrency(Math.abs(cf.amount))})` :
+                                    formatCurrency(cf.amount);
+                                html += `<td class="py-3 px-2 text-center ${colorClass} text-xs font-medium">${displayValue}</td>`;
+                            } else {
+                                html += `<td class="py-3 px-2 text-center text-gray-600">—</td>`;
+                            }
+                        }
+
+                        html += `</tr>`;
+                    });
+
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFundOverview();
+            loadCapitalDeployment();
+            loadCohortHealth();
+            loadCashflowMatrix();
+        });
+    </script>
+</body>
+
+</html>

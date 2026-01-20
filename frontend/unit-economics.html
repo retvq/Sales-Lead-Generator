@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Economics | Capital Operations</title>
+    <meta name="description" content="CAC payback, LTV:CAC ratios, and cohort lifetime value analysis">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-on_track {
+            color: #10b981;
+        }
+
+        .status-delayed {
+            color: #f59e0b;
+        }
+
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .ratio-bar {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(168, 85, 247, 0.3) 100%);
+        }
+    </style>
+</head>
+
+<body class="text-white antialiased">
+    <!-- Header -->
+    <header class="py-4 px-8 border-b border-white/5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-semibold">Capital Operations</h1>
+                    </div>
+                </a>
+            </div>
+            <nav class="flex items-center gap-6">
+                <a href="/financing"
+                    class="text-sm font-medium text-gray-400 hover:text-white transition-colors">Financing</a>
+                <a href="/unit-economics"
+                    class="text-sm font-medium text-indigo-400 border-b-2 border-indigo-400 pb-1">Unit Economics</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-8 py-8">
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold mb-2">Cohort Unit Economics</h2>
+            <p class="text-gray-400">CAC payback analysis and LTV:CAC ratio performance</p>
+        </div>
+
+        <!-- Summary Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="summary-metrics">
+            <div class="loading glass-card rounded-xl">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- LTV CAC Ratios -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- LTV:CAC by Fund -->
+            <div class="glass-card rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-1">LTV:CAC Ratios by Fund</h3>
+                <p class="text-sm text-gray-400 mb-4">3-year and 5-year lifetime value ratios</p>
+                <div id="ltv-ratios-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CAC Payback -->
+            <div class="glass-card rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-1">CAC Payback Period</h3>
+                <p class="text-sm text-gray-400 mb-4">Months to customer acquisition cost recovery</p>
+                <div id="cac-payback-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LTV Curves Chart -->
+        <div class="glass-card rounded-xl p-6 mb-8">
+            <h3 class="text-lg font-semibold mb-1">Cohort LTV Curves</h3>
+            <p class="text-sm text-gray-400 mb-4">Lifetime value trajectory by fund with payback threshold</p>
+            <div class="h-80">
+                <canvas id="ltvCurvesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Fund Metrics -->
+        <div class="glass-card rounded-xl p-6">
+            <h3 class="text-lg font-semibold mb-1">Fund Unit Economics Detail</h3>
+            <p class="text-sm text-gray-400 mb-4">Comprehensive metrics breakdown by fund</p>
+            <div id="fund-detail-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-6 px-8 mt-8">
+        <div class="max-w-7xl mx-auto flex items-center justify-between text-sm text-gray-500">
+            <span>Capital Operations Dashboard v1.0</span>
+            <span>Data refreshed from SQLite database</span>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE = '';
+        let ltvChart = null;
+
+        async function loadUnitEconomics() {
+            try {
+                const res = await fetch(`${API_BASE}/api/unit-economics`);
+                const data = await res.json();
+                renderSummaryMetrics(data.summary);
+                renderLTVRatios(data.funds);
+                renderCACPayback(data.funds, data.summary.payback_threshold);
+                renderLTVCurves(data.funds);
+                renderFundDetail(data.funds);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderSummaryMetrics(summary) {
+            const container = document.getElementById('summary-metrics');
+
+            container.innerHTML = `
+                <div class="metric-card rounded-xl p-6">
+                    <p class="text-sm text-gray-400 mb-1">Avg CAC Payback</p>
+                    <p class="text-3xl font-bold text-purple-400">${summary.average_cac_payback} mo</p>
+                    <p class="text-xs text-gray-500 mt-2">Threshold: ${summary.payback_threshold} months</p>
+                </div>
+                <div class="metric-card rounded-xl p-6">
+                    <p class="text-sm text-gray-400 mb-1">Avg LTV:CAC (3Y)</p>
+                    <p class="text-3xl font-bold text-indigo-400">${summary.average_ltv_cac_3y}x</p>
+                    <p class="text-xs text-gray-500 mt-2">3-year ratio</p>
+                </div>
+                <div class="metric-card rounded-xl p-6">
+                    <p class="text-sm text-gray-400 mb-1">Avg LTV:CAC (5Y)</p>
+                    <p class="text-3xl font-bold text-emerald-400">${summary.average_ltv_cac_5y}x</p>
+                    <p class="text-xs text-gray-500 mt-2">5-year ratio</p>
+                </div>
+                <div class="metric-card rounded-xl p-6">
+                    <p class="text-sm text-gray-400 mb-1">Payback Status</p>
+                    <p class="text-3xl font-bold ${summary.average_cac_payback <= summary.payback_threshold ? 'text-emerald-400' : 'text-amber-400'}">
+                        ${summary.average_cac_payback <= summary.payback_threshold ? 'On Track' : 'Delayed'}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-2">vs ${summary.payback_threshold}mo benchmark</p>
+                </div>
+            `;
+        }
+
+        function renderLTVRatios(funds) {
+            const container = document.getElementById('ltv-ratios-container');
+
+            let html = '<div class="space-y-6">';
+
+            funds.forEach(fund => {
+                const maxRatio = Math.max(fund.ltv_cac_3y, fund.ltv_cac_5y, 5);
+                const width3y = (fund.ltv_cac_3y / maxRatio) * 100;
+                const width5y = (fund.ltv_cac_5y / maxRatio) * 100;
+
+                html += `
+                    <div>
+                        <p class="text-sm font-medium text-gray-300 mb-3">${fund.fund_name}</p>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+                                    <span>3-Year LTV:CAC</span>
+                                    <span class="font-semibold text-indigo-400">${fund.ltv_cac_3y}x</span>
+                                </div>
+                                <div class="h-3 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full" style="width: ${width3y}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+                                    <span>5-Year LTV:CAC</span>
+                                    <span class="font-semibold text-emerald-400">${fund.ltv_cac_5y}x</span>
+                                </div>
+                                <div class="h-3 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full" style="width: ${width5y}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderCACPayback(funds, threshold) {
+            const container = document.getElementById('cac-payback-container');
+
+            let html = '<div class="space-y-6">';
+
+            funds.forEach(fund => {
+                const widthPercent = Math.min((fund.cac_payback_months / 24) * 100, 100);
+                const thresholdPercent = (threshold / 24) * 100;
+                const isOnTrack = fund.cac_payback_months <= threshold;
+
+                html += `
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm font-medium text-gray-300">${fund.fund_name}</p>
+                            <span class="text-sm font-semibold ${isOnTrack ? 'text-emerald-400' : 'text-amber-400'}">${fund.cac_payback_months} months</span>
+                        </div>
+                        <div class="relative h-4 bg-gray-800 rounded-full overflow-hidden">
+                            <div class="absolute top-0 h-full bg-gradient-to-r ${isOnTrack ? 'from-emerald-600 to-emerald-400' : 'from-amber-600 to-amber-400'} rounded-full transition-all" style="width: ${widthPercent}%"></div>
+                            <div class="absolute top-0 h-full w-0.5 bg-red-500" style="left: ${thresholdPercent}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between mt-1 text-xs text-gray-500">
+                            <span>0 mo</span>
+                            <span class="text-red-400">Threshold: ${threshold}mo</span>
+                            <span>24 mo</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderLTVCurves(funds) {
+            const ctx = document.getElementById('ltvCurvesChart').getContext('2d');
+
+            const colors = [
+                { border: 'rgba(102, 126, 234, 1)', bg: 'rgba(102, 126, 234, 0.1)' },
+                { border: 'rgba(168, 85, 247, 1)', bg: 'rgba(168, 85, 247, 0.1)' },
+                { border: 'rgba(16, 185, 129, 1)', bg: 'rgba(16, 185, 129, 0.1)' }
+            ];
+
+            const datasets = funds.map((fund, index) => ({
+                label: fund.fund_name,
+                data: fund.ltv_trajectory.map(t => t.ratio),
+                borderColor: colors[index % colors.length].border,
+                backgroundColor: colors[index % colors.length].bg,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointBackgroundColor: colors[index % colors.length].border
+            }));
+
+            datasets.push({
+                label: 'Break-even (1.0x)',
+                data: [1, 1, 1, 1, 1],
+                borderColor: 'rgba(239, 68, 68, 0.8)',
+                borderDash: [5, 5],
+                fill: false,
+                pointRadius: 0,
+                borderWidth: 2
+            });
+
+            if (ltvChart) {
+                ltvChart.destroy();
+            }
+
+            ltvChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'],
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#9ca3af',
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `${context.dataset.label}: ${context.parsed.y}x`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#9ca3af' }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#9ca3af',
+                                callback: function (value) {
+                                    return value.toFixed(1) + 'x';
+                                }
+                            },
+                            min: 0,
+                            max: 6
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderFundDetail(funds) {
+            const container = document.getElementById('fund-detail-container');
+
+            let html = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-white/10">
+                                <th class="text-left py-3 px-4 text-gray-400 font-medium">Fund</th>
+                                <th class="text-center py-3 px-4 text-gray-400 font-medium">CAC Payback</th>
+                                <th class="text-center py-3 px-4 text-gray-400 font-medium">LTV:CAC (3Y)</th>
+                                <th class="text-center py-3 px-4 text-gray-400 font-medium">LTV:CAC (5Y)</th>
+                                <th class="text-center py-3 px-4 text-gray-400 font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            funds.forEach(fund => {
+                const isOnTrack = fund.payback_status === 'on_track';
+
+                html += `
+                    <tr class="border-b border-white/5 hover:bg-white/5">
+                        <td class="py-4 px-4 font-medium">${fund.fund_name}</td>
+                        <td class="py-4 px-4 text-center">
+                            <span class="text-lg font-semibold ${isOnTrack ? 'text-emerald-400' : 'text-amber-400'}">${fund.cac_payback_months}</span>
+                            <span class="text-gray-500 text-xs ml-1">months</span>
+                        </td>
+                        <td class="py-4 px-4 text-center">
+                            <span class="text-lg font-semibold text-indigo-400">${fund.ltv_cac_3y}x</span>
+                        </td>
+                        <td class="py-4 px-4 text-center">
+                            <span class="text-lg font-semibold text-emerald-400">${fund.ltv_cac_5y}x</span>
+                        </td>
+                        <td class="py-4 px-4 text-center">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium ${isOnTrack ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">
+                                ${isOnTrack ? 'On Track' : 'Delayed'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUnitEconomics();
+        });
+    </script>
+</body>
+
+</html>
