@@ -1,4 +1,4 @@
-# Capital Operations Dashboard
+# Sales-Lead-Generator Dashboard
 
 [Demo](https://retvq.github.io/Sales-Lead-Generator/)
 
@@ -202,6 +202,7 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
 
 
 
